@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Robium Connecter</title>
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+      #serialOut p {
+        display: block;
+        margin: 0px !important;
+        padding-bottom: 4px !important;
+      }
+
+      #serialOutMainWrapper {
+        position: absolute;
+        top: 125px; 
+        height:calc(100% - 170px);
+        width:100%;
+      }
+
+      #serialOutWrapper {
+        height:50%; 
+        overflow-y: scroll; 
+        background-color:white; 
+        vertical-align: middle;
+        margin: 0px !important;
+      }
+
+      #terminalWindow {
+        height:50%;   
+        background-color: black; 
+        vertical-align: middle;
+        color: aliceblue;
+        margin: 0px !important;
+      }
+
+      #terminalWindowContent{
+        overflow-y: scroll;
+        height: calc(100% - 28px); 
+      }
+      
+      #holder {
+        height:28px;
+        background-color: rgb(50,50,50);
+        width: 100%;
+        cursor: row-resize;
+        margin: 0;
+      }
+
+      .robiumBtn{
+        margin-top:1.8em; 
+        padding-left: 0.1em; 
+        padding-right: 0.1em; 
+      }
+
+      .robiumBtnTerm{
+        margin-top:0.1em !important; 
+        padding-left: 0.1em !important; 
+        padding-right: 0.1em !important; 
+        width:100%;
+      }
+
+      #topMenu{
+        position:absolute; 
+        height:65px; 
+        top:70px; 
+        width:100%; 
+        margin: 0;
+        background-color: #eee;
+      }
+
+      /* label focus color */
+      .input-field input[type=text]:focus + label {
+        color: #ffa726 !important;
+      }
+
+      /* label underline focus color */
+      .input-field input[type=text]:focus {
+        border-bottom: 1px solid #ffa726 !important;
+        box-shadow: 0 1px 0 0 #e65100 !important;
+      }
+
+      .progress { 
+        background-color: #ffe0b2 !important;
+      } 
+
+      .indeterminate{
+        background-color: #ffb74d !important;
+      }
+
+      .select-wrapper input.select-dropdown {
+        font-size: 14px !important;
+        height: 2rem !important;
+        line-height: 2rem !important;
+      }
+
+      .dropdown-content li span{
+        color: #e65100 !important;
+      }
+
+      #comNameDiv, #boardTypeDiv {
+        width: calc(50% - 5px); 
+        box-sizing: border-box; 
+        padding-left: 10px;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div id="content" style="height: 100%; width: 100%;">
+      <!-- <div class="row" style="position:absolute; height:35px; top:0; width:100%; margin:0;">
+        <div class="col m12 s12" style="height:100%;">
+          <h1 style="margin:2px; font-size:25px;">Robium Connecter</h1>
+        </div>
+      </div> -->
+      <!-- <div class="row" style="position:absolute; height:35px; top:35px; width:100%; margin:0;"> -->
+      <div style="position:absolute; height:70px; top:0px; width:100%; margin:0;">
+        <div style="margin: 0; padding: 0; width: 100%;">
+          <p id="isConnected" style="margin-bottom:0; margin-top:3px; padding-left: 10px; padding-top: 5px; width: 100%;">Device is connected</p>
+          <div id="comNameDiv" style="margin: 0; padding-top: 0; padding-bottom: 0; font-size:10px; margin-top:3px;">
+            <div class="input-field" style="margin-top:0; font-size:10px;">
+              <select id="comNameSelector" style="font-size:10px;"></select>
+            </div>
+          </div>
+          <div id="boardTypeDiv" style="margin: 0; padding-top: 0; padding-bottom: 0; font-size:10px; margin-top:3px;">
+            <div class="input-field" style="margin-top:0; font-size:10px;">
+              <select id="boardTypeSelector" style="font-size:10px;">
+                <option value="ArduinoUNO">Arduino UNO</option>
+                <option value="ArduinoNANO">Arduino NANO</option>
+                <option value="ESP8266">ESP 8266</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="progress" id="progressBar" style="margin-top:30px !important;">
+          <div class="indeterminate"></div>
+        </div>
+      </div>
+      
+      <div class="row" id="topMenu">
+        <div class="input-field col m6 s12" style="margin-bottom: 0;">
+            <input placeholder="Send to Robium" id="first_name" type="text" class="validate">
+            <label for="first_name">Send to Robium</label>
+        </div>
+        <div class="col m1 s12 robiumBtn" >
+          <a id="sendBtn" class="waves-effect waves-light btn-small orange lighten-1 truncate" style="width:100%; height:25px; line-height:180%;">Send</a>
+        </div>
+        <div class="col m3 s6 robiumBtn" >
+          <ul id="dropdown2" class="dropdown-content">
+            <li name="4800"><a href="#!">4800</a></li>
+            <li name="9600"><a href="#!">9600</a></li>
+            <li name="19200"><a href="#!">19200</a></li>
+            <li name="31250"><a href="#!">31250</a></li>
+            <li name="38400"><a href="#!">38400</a></li>
+            <li name="57600"><a href="#!">57600</a></li>
+            <li name="74880"><a href="#!">74880</a></li>
+            <li name="115200"><a href="#!">115200</a></li>
+            <li name="230400"><a href="#!">230400</a></li>
+            <li name="250000"><a href="#!">250000</a></li>
+          </ul>
+          <a id="dropdowner" class="btn-small dropdown-trigger orange lighten-1 truncate" href="#!" data-target="dropdown2" style="width:100%; height:25px; line-height:180%;">Data rate <span id="bitRate"></span>, bps<i class="material-icons right">arrow_drop_down</i></a>
+        </div>
+        <div class="col m1 s3 robiumBtn" ><a class="waves-effect waves-light btn-small orange lighten-1 truncate" style="width:100%; height:25px; line-height:180%;" id="serialClear">Clear</a></div>
+        <div class="col m1 s3 robiumBtn" ><a class="waves-effect waves-light btn-small orange lighten-1 truncate" style="width:100%; height:25px; line-height:180%;" id="serialDown">Down</a></div>
+      </div>
+      <div class="row" id="serialOutMainWrapper">
+        <div class="row" id="serialOutWrapper">
+          <div class="col m12 s12" id="serialOut">
+          
+          </div>
+        </div>
+        <div class="row" id="terminalWindow"> 
+          <div id="holder">
+            <div class="col m10 s6" style="height:100%; vertical-align:middle; line-height: 26px;">Terminal</div>
+            <div class="col m1 s3 robiumBtnTerm" ><a class="waves-effect waves-light btn-small orange lighten-1 truncate" style="width:100%; height:25px; line-height:180%;" id="terminalClear">Clear</a></div>
+            <div class="col m1 s3 robiumBtnTerm" ><a class="waves-effect waves-light btn-small orange lighten-1 truncate" style="width:100%; height:25px; line-height:180%;" id="terminalDown">Down</a></div>
+          </div>
+
+          <div class="col m12 s12" id="terminalWindowContent">
+          <!-- <div id="error"></div>
+          <div id="ports"></div> -->
+          </div>  
+        </div>
+      </div>
+      <div class="row" style="position:absolute; height:40px; bottom:0; width:100%; margin:0;">
+        <div class="col m3 s3"></div>
+        <div class="col m3 s3"><a id="close" class="waves-effect waves-light btn-small orange lighten-1 truncate" style="width:100%;">Close</a></div>
+        <div class="col m3 s3"><a id="quit" class="waves-effect waves-light btn-small orange lighten-1 truncate" style="width:100%;">Quit</a></div>
+        <div class="col m3 s3"></div>
+      </div>
+    </div>  
+  </body>
+  <script type="text/javascript" src="js/materialize.min.js"></script>
+  <script type="module">
+    const { ipcRenderer } = window.require("electron");
+
+    let terminalDownSwicher = false;
+    let serialDownSwicher = false;
+
+    function clearSerialOut() {
+      let serialOutDiv = document.getElementById('serialOut');
+      while (serialOutDiv.firstChild) {
+        serialOutDiv.removeChild(serialOutDiv.lastChild);
+      }
+    };
+
+    function serialDown() {
+      serialDownSwicher = !serialDownSwicher;
+
+      let serialDownEl = document.getElementById('serialDown');
+      if(serialDownSwicher){
+        serialDownEl.classList.add("grey");
+        serialDownEl.classList.remove("orange");
+      } else {
+        serialDownEl.classList.add("orange");
+        serialDownEl.classList.remove("grey");
+      }
+    };
+
+    function clearTerminalOut() {
+      let terminalWindowContent = document.getElementById('terminalWindowContent');
+      while (terminalWindowContent.firstChild) {
+        terminalWindowContent.removeChild(terminalWindowContent.lastChild);
+      }
+    };
+
+    function terminalDown() {
+      terminalDownSwicher = !terminalDownSwicher;
+
+      let terminalDownEl = document.getElementById('terminalDown');
+      if(terminalDownSwicher){
+        terminalDownEl.classList.add("grey");
+        terminalDownEl.classList.remove("orange");
+      } else {
+        terminalDownEl.classList.add("orange");
+        terminalDownEl.classList.remove("grey");
+      }
+    };
+
+    function setSelectedDeviceByUser(portName){
+      // console.log(portName);
+      ipcRenderer.send("setDeviceByUser", portName);
+      localStorage.setItem('comName', portName);
+    };
+
+    function setSelectedDeviceTypeByUser(typeNmae){
+      console.log("setSelectedDeviceTypeByUser(typeNmae)" , typeNmae);
+      ipcRenderer.send("setDeviceTypeByUser", typeNmae);
+      localStorage.setItem('boardType', typeNmae);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      let bitRate = "4800";
+      if(localStorage.getItem("bitRate") != undefined){
+        bitRate = localStorage.getItem("bitRate");
+      }
+      let eBitRate = document.getElementById('bitRate');
+      eBitRate.innerText = bitRate;
+      ipcRenderer.send("setSerialBaudRate", {serialBaudRate:bitRate});
+      let elems = document.getElementById('dropdowner');
+      let instances = M.Dropdown.init(elems, {
+        onItemClick: (e) => {
+          console.log(e.getAttribute("name"));
+          eBitRate.innerText = e.getAttribute("name");
+          bitRate = e.getAttribute("name");
+          localStorage.setItem('bitRate', bitRate);
+          ipcRenderer.send("setSerialBaudRate", {serialBaudRate:bitRate});
+        },
+      });
+      // console.log(instances);
+      let serialOutDiv = document.getElementById('serialOut');
+      const serialOutMainWrapper = document.getElementById("serialOutMainWrapper");
+      const serialOutWrapper = document.getElementById("serialOutWrapper");
+      const terminalWindow = document.getElementById("terminalWindow");
+      const holder = document.getElementById("holder");
+      const terminalWindowContent = document.getElementById("terminalWindowContent");
+
+      document.getElementById("comNameDiv").style.display = "none";
+      document.getElementById("boardTypeDiv").style.display = "none";
+
+      let id = 0;
+      ipcRenderer.on("dataOn", (event, arg) => {
+        const para = document.createElement("p");
+        para.setAttribute("id", "serial" + id.toString());
+        para.innerHTML = arg;
+        serialOutDiv.appendChild(para);
+        ipcRenderer.send("sendStringToSocket", arg);
+        id++;
+        if(id > 100){
+          let serialRemoveElement = document.getElementById('serial' + (id-101).toString());
+          if(serialRemoveElement != undefined){
+            serialRemoveElement.remove();
+          }
+        }
+        if(serialDownSwicher && para != undefined){
+          para.scrollIntoView();
+        } 
+      });
+
+      let idt = 0;
+      ipcRenderer.on("dataToTerminal", (event, arg) => {
+        const para = document.createElement("p");
+        para.setAttribute("id", "serial" + idt.toString());
+        para.innerHTML = arg;
+        terminalWindowContent.appendChild(para);
+        
+        idt++;
+        if(idt > 100){
+          let serialRemoveElement = document.getElementById('serial' + (idt-101).toString());
+          if(serialRemoveElement != undefined){
+            terminalWindowContent.remove();
+          }
+        }
+        if(terminalDownSwicher && para != undefined){
+          para.scrollIntoView();
+        } 
+      });
+
+      ipcRenderer.on("isArduinoUsesPort", (event, arg)=>{
+        if(arg){
+          document.getElementById("comNameSelector").disabled = true;
+          document.getElementById("boardTypeSelector").disabled = true;
+        } else {
+          document.getElementById("comNameSelector").disabled = false;
+          document.getElementById("boardTypeSelector").disabled = false;
+        }
+        M.FormSelect.init(document.getElementById("comNameSelector"));
+        M.FormSelect.init(document.getElementById("boardTypeSelector"));
+      });
+
+      document.getElementById("comNameSelector").addEventListener("change", (e) => {
+        setSelectedDeviceByUser(e.target.value);
+      });
+      
+      document.getElementById("boardTypeSelector").addEventListener("change", (e) => {
+        setSelectedDeviceTypeByUser(e.target.value);
+      });
+
+      ipcRenderer.on("comName", (event, arg) => {
+        let isConnectedElement = document.getElementById('isConnected');
+        let progressBarElement = document.getElementById('progressBar');
+        let dataJSON = JSON.parse(arg);
+        
+        if(dataJSON.ports.length == 0){
+          document.getElementById("comNameDiv").style.display = "none";
+          document.getElementById("boardTypeDiv").style.display = "none";
+        } else {
+          document.getElementById("comNameDiv").style.display = "inline-block";
+          document.getElementById("boardTypeDiv").style.display = "inline-block";
+        }
+        
+        isConnectedElement.innerHTML = dataJSON.msg;
+        if(dataJSON.preloader){
+          // isConnectedElement.innerHTML = 'Device is connected on port: ' + arg;
+          progressBarElement.style.display = 'block';
+        } else {
+          // isConnectedElement.innerHTML = 'Searching for the device ...';
+          progressBarElement.style.display = 'none';
+        }
+      });
+      
+      let boardTypeSelecter = document.getElementById("boardTypeSelector")
+      M.FormSelect.init(boardTypeSelecter);
+      let boardType = "ArduinoUNO";
+      if(localStorage.getItem("boardType") != undefined){
+        boardType = localStorage.getItem("boardType");
+      }
+      for(let i = 0; i < boardTypeSelecter.options.length; i++) {
+        let option = boardTypeSelecter.options[i];
+        if(option.value == boardType){
+          option.selected = true;
+          break;
+        }
+      }
+      boardTypeSelecter.dispatchEvent(new Event("change"));
+      
+      ipcRenderer.on("comNameList", (e, a) => {
+        console.log(a);
+        let dataJSON = JSON.parse(a);
+        while (comNameSelector.firstChild) {
+          comNameSelector.removeChild(comNameSelector.lastChild);
+        }
+        if(dataJSON.ports.length > 0){
+          document.getElementById("comNameDiv").style.display = "inline-block";
+          document.getElementById("boardTypeDiv").style.display = "inline-block";
+          const options = [];
+          for(let tmpDevice of dataJSON.ports){
+            const localDev = document.createElement("option");
+            localDev.setAttribute("value", tmpDevice.path);
+            localDev.innerHTML = tmpDevice.path;
+            if(dataJSON.comName == tmpDevice.path){
+              localDev.setAttribute("selected", "selected");
+            } else if(tmpDevice.path == localStorage.getItem("comName")){
+              localDev.setAttribute("selected", "selected");
+            }
+            comNameSelector.appendChild(localDev);
+          }
+          M.FormSelect.init(comNameSelector);
+          comNameSelector.dispatchEvent(new Event("change"));
+        } else {
+          document.getElementById("comNameDiv").style.display = "none";
+          document.getElementById("boardTypeDiv").style.display = "none";
+        }
+
+        document.getElementById('isConnected').innerHTML = dataJSON.msg;
+
+        if(dataJSON.preloader){
+          document.getElementById('progressBar').style.display = 'block';
+        } else {
+          document.getElementById('progressBar').style.display = 'none';
+        }
+      })
+
+      let quit = document.getElementById('quit');
+      quit.onclick = ()=>{
+        ipcRenderer.send("quit", {});
+      };
+        
+      let close = document.getElementById('close');
+      close.onclick = ()=>{
+        ipcRenderer.send("close", {});
+      };
+
+
+      let terminalClear = document.getElementById('terminalClear');
+      terminalClear.onclick = ()=>{
+        clearTerminalOut();
+      };
+
+      let terminalDownEl = document.getElementById('terminalDown');
+      terminalDownEl.onclick = ()=>{
+        terminalDown();
+      };
+      
+      let serialClear = document.getElementById('serialClear');
+      serialClear.onclick = ()=>{
+        clearSerialOut();
+      };
+
+      let serialDownEl = document.getElementById('serialDown');
+      serialDownEl.onclick = ()=>{
+        serialDown();
+      };
+
+      let sendBtnEl = document.getElementById('sendBtn');
+      sendBtnEl.onclick = ()=>{
+        let first_nameEl = document.getElementById('first_name');
+        ipcRenderer.send("writeToSerial", first_name.value);
+      };
+
+      const BORDER_SIZE = 6;
+      let m_pos;
+      function resize(e){
+        let prevM_pos = m_pos;
+        const dy = m_pos - e.y;
+        m_pos = e.y;
+        let tmpH = (parseInt(getComputedStyle(terminalWindow, '').height) + dy);
+        let tmpHOposit = (parseInt(getComputedStyle(serialOutMainWrapper, '').height) - tmpH);
+        if(!isNaN(tmpH) && !isNaN(tmpHOposit)){
+          if(tmpH > 30 && tmpHOposit > 30){
+            serialOutWrapper.style.height = tmpHOposit + "px";
+            terminalWindow.style.height = tmpH + "px";
+          } else {
+          //  console.log(tmpH);
+            m_pos = prevM_pos;
+          }
+        }
+      }
+
+      holder.addEventListener("mousedown", function(e){
+        document.addEventListener("mousemove", resize, false);
+      }, false);
+
+      document.addEventListener("mouseup", function(){
+        document.removeEventListener("mousemove", resize, false);
+      }, false);
+
+      const topMenu = document.getElementById('topMenu');
+      function resizePlayer(e){
+        if(document.body.clientWidth < 600){
+          var cols = document.getElementsByClassName('robiumBtn');
+          for(let i = 0; i < cols.length; i++) {
+            cols[i].style.marginTop = '0.1em';
+            cols[i].style.paddingLeft = '0.1em';
+            cols[i].style.paddingRight = '0.1em';
+          }
+          
+          topMenu.style.height = '130px';
+          serialOutMainWrapper.style.top = '190px';
+          serialOutMainWrapper.style.height = "calc(100% - 240px)";
+        } else {
+          var cols = document.getElementsByClassName('robiumBtn');
+          for(let i = 0; i < cols.length; i++) {
+            cols[i].style.marginTop = '1.8em';
+            cols[i].style.paddingLeft = '0.1em';
+            cols[i].style.paddingRight = '0.1em';
+          }
+          
+          topMenu.style.height = '65px';
+          serialOutMainWrapper.style.top = '125px';
+          serialOutMainWrapper.style.height = "calc(100% - 170px)";
+        }
+        serialOutWrapper.style.height = "50%";
+        terminalWindow.style.height = "50%";
+        m_pos = undefined;
+      }
+      window.addEventListener("resize", () => {
+        resizePlayer();
+      });
+
+      ipcRenderer.send("getComList", "");
+      
+
+//       async function listSerialPorts() {
+//       await SerialPort.list().then((ports, err) => {
+//       if(err) {
+//         document.getElementById('error').textContent = err.message
+//         return
+//       } else {
+//         document.getElementById('error').textContent = ''
+//       }
+//       console.log('ports', ports);
+
+//       if (ports.length === 0) {
+//         document.getElementById('error').textContent = 'No ports discovered'
+//       }
+
+//       // tableHTML = tableify(ports)
+//       //   document.getElementById('ports').innerHTML = tableHTML
+//       })
+//     }
+
+//     function listPorts() {
+//       listSerialPorts();
+//       setTimeout(listPorts, 2000);
+//     }
+
+// // Set a timeout that will check for new serialPorts every 2 seconds.
+// // This timeout reschedules itself.
+//     setTimeout(listPorts, 2000);
+//     listSerialPorts()
+
+
+      
+    });
+  </script>
+  
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Robium Connecter</title>
+    <link type="text/css" rel="stylesheet" href="css/materialize.min.css" media="screen,projection" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <style>
+
+      .input-field input[type=text]:focus + label {
+        color: #ffa726 !important;
+      }
+
+      .input-field input[type=text]:focus {
+        border-bottom: 1px solid #ffa726 !important;
+        box-shadow: 0 1px 0 0 #e65100 !important;
+      }
+
+      .progress { 
+        background-color: #ffe0b2 !important;
+      } 
+
+      .indeterminate{
+        background-color: #ffb74d !important;
+      }
+
+    </style>
+  </head>
+  <body>
+    <div style="position:fixed; top:0; background-color:white; width:100%;">
+        <h1 style="font-size: 15px; margin: 1.5rem;" id="arduinoInstallingH1">Arduino Library is installing...</h1>
+        <div class="progress" id="progressBar">
+            <div class="indeterminate"></div>
+        </div>
+    </div>
+    <div style="margin:5px; margin-top:60px;">
+        <div id="arduinoInstallingOutput"></div>
+    </div>
+  </body>
+  <script type="text/javascript" src="js/materialize.min.js"></script>
+  <script type="module">
+    const { ipcRenderer } = window.require("electron");
+    document.addEventListener("DOMContentLoaded", function () {
+      let arduinoInstallingOutputElement = document.getElementById("arduinoInstallingOutput");
+      ipcRenderer.on("dataMsg", (event, arg) => {
+        arduinoInstallingOutputElement.innerHTML += "<p style=\"color:black;\">" + arg + "</p>";
+      });
+      ipcRenderer.on("errorMsg", (event, arg) => {
+        arduinoInstallingOutputElement.innerHTML += "<p style=\"color:red;\">" + arg + "</p>";
+      });
+      ipcRenderer.on("exitMsg", (event, arg) => {
+        arduinoInstallingOutputElement.innerHTML += "<p style=\"color:green;\">" + arg + "</p>";
+      });
+      ipcRenderer.on("doneMsg", (event, arg) => {
+        arduinoInstallingOutputElement.innerHTML += "<p style=\"color:blck;\">The Adruino is installed and configured.</p>";
+        let progressBarElement = document.getElementById('progressBar');
+        progressBarElement.style.display = 'none';
+
+        let arduinoInstallingH1Element = document.getElementById('arduinoInstallingH1');
+        arduinoInstallingH1Element.innerHTML = "Arduino Library is installed and configured."
+
+        const timeoutRelauch = setTimeout(relaunchCall, 1000);
+        function relaunchCall() {
+            ipcRenderer.send("relaunch", {});
+            clearTimeout(timeoutRelauch);
+        }
+
+      });
+    });
+
+  </script>
+</html>
