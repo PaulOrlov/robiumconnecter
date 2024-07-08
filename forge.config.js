@@ -44,4 +44,17 @@ module.exports = {
       },
     },
   ],
+  publishers: [
+    {
+      name: '@electron-forge/publisher-github',
+      config: {
+        repository: {
+          owner: 'PaulOrlov',
+          name: 'robiumconnecter'
+        },
+        prerelease: false,
+        draft: true
+      }
+    }
+  ]
 };

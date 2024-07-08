@@ -210,7 +210,7 @@ if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-fir
     ws.on("error", console.error);
 
     ws.on("message", function message(data) {
-      console.log("received: %s", data);
+      // console.log("received: %s", data);
       try {
         var dataJSON = JSON.parse(data);
         if (dataJSON.action == "upload") {

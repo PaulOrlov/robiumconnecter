@@ -121,7 +121,7 @@ const ArduinoCLIWrapper = {
   },
   initArduino: function (arduinoInstallWindow) {
     let isError = false;
-    let arduinoSettings = path.join(this.getProjectsPath(), "arduino-cli.yaml");
+    let arduinoSettings = path.join(this.getProjectsPath(), "arduino-cli.json");
     //$ arduino-cli config init
     // Config file written: /home/lucidmachine/.arduino15/arduino-cli.yaml
 
@@ -178,6 +178,7 @@ const ArduinoCLIWrapper = {
           try {
             const doc = yaml.load(fs.readFileSync(arduinoSettings, "utf8"));
             doc.board_manager.additional_urls.push("http://arduino.esp8266.com/stable/package_esp8266com_index.json");
+            doc.board_manager.additional_urls.push("https://dl.espressif.com/dl/package_esp32_index.json");
             fs.writeFileSync(arduinoSettings, JSON.stringify(doc,null,4), function (err) {
               if (err) {
                 if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
@@ -189,12 +190,12 @@ const ArduinoCLIWrapper = {
             
             if(!isError){
               //-----
-              connandLine = "This action is running: " + this.getArduinoPath() + " core update-index";
+              connandLine = "This action is running: " + this.getArduinoPath() + " core update-index --config-file " + arduinoSettings;
               if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                 arduinoInstallWindow.webContents.send("dataMsg", connandLine);
               }
         
-              server = cp.spawn(this.getArduinoPath(), ["core", "update-index"], {
+              server = cp.spawn(this.getArduinoPath(), ["core", "update-index", "--config-file", arduinoSettings], {
                 detached: false,
               });
         
@@ -218,7 +219,7 @@ const ArduinoCLIWrapper = {
 
               server.on("exit", (code) => {
                 // console.log("Server exited with code " + code.toString());
-                connandLine = "This action is ready: " + this.getArduinoPath() + " core update-index";
+                connandLine = "This action is ready: " + this.getArduinoPath() + " core update-index --config-file " + arduinoSettings;
                 connandLine = connandLine + " , with code: " + code.toString();
                 try {
                   if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
@@ -229,12 +230,12 @@ const ArduinoCLIWrapper = {
                 }
         
                 if(isError == false && code.toString() == '0'){
-                  connandLine = "This action is running: " + this.getArduinoPath() + " core install esp8266:esp8266";
+                  connandLine = "This action is running: " + this.getArduinoPath() + " core install arduino:avr --config-file " + arduinoSettings;
                   if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                     arduinoInstallWindow.webContents.send("dataMsg", connandLine);
                   }
         
-                  server = cp.spawn(this.getArduinoPath(), ["core", "install", "esp8266:esp8266"], {
+                  server = cp.spawn(this.getArduinoPath(), ["core", "install", "arduino:avr", "--config-file", arduinoSettings], {
                     detached: false,
                   });
         
@@ -257,9 +258,9 @@ const ArduinoCLIWrapper = {
                   });
 
                   server.on("exit", (code) => {
-                  // console.log("Server exited with code " + code.toString());
-                    connandLine = "This action is ready: " + this.getArduinoPath() + " core install esp8266:esp8266";
+                    connandLine = "This action is running: " + this.getArduinoPath() + " core install arduino:avr --config-file " + arduinoSettings;
                     connandLine = connandLine + " , with code: " + code.toString();
+
                     try {
                       if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                         arduinoInstallWindow.webContents.send("exitMsg", connandLine);
@@ -267,24 +268,23 @@ const ArduinoCLIWrapper = {
                     } catch (e) {
                       console.log(e);
                     }
-        
+
                     if(isError == false && code.toString() == '0'){
-                    /***** */
-                      connandLine = "This action is running: " + this.getArduinoPath() + " lib install FastLED";
+                      connandLine = "This action is running: " + this.getArduinoPath() + " core install esp8266:esp8266 --config-file " + arduinoSettings;
                       if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                         arduinoInstallWindow.webContents.send("dataMsg", connandLine);
                       }
-
-                      server = cp.spawn(this.getArduinoPath(), ["lib", "install", "FastLED"], {
+            
+                      server = cp.spawn(this.getArduinoPath(), ["core", "install", "esp8266:esp8266", "--config-file", arduinoSettings], {
                         detached: false,
                       });
-
+            
                       server.stdout.on("data", (data) => {
                         if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                           arduinoInstallWindow.webContents.send("dataMsg", data.toString());
                         }
                       });
-
+            
                       server.stderr.on("data", (data) => {
                         console.error(data.toString());
                         isError = true;
@@ -296,9 +296,10 @@ const ArduinoCLIWrapper = {
                           console.log(e);
                         }
                       });
-
+    
                       server.on("exit", (code) => {
-                        connandLine = "This action is ready: " + this.getArduinoPath() + " lib install FastLED";
+                      // console.log("Server exited with code " + code.toString());
+                        connandLine = "This action is ready: " + this.getArduinoPath() + " core install esp8266:esp8266 --config-file " + arduinoSettings;
                         connandLine = connandLine + " , with code: " + code.toString();
                         try {
                           if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
@@ -307,19 +308,60 @@ const ArduinoCLIWrapper = {
                         } catch (e) {
                           console.log(e);
                         }
-
+            
                         if(isError == false && code.toString() == '0'){
+                        /***** */
+                          connandLine = "This action is running: " + this.getArduinoPath() + " lib install FastLED --config-file " + arduinoSettings;
                           if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
-                            arduinoInstallWindow.webContents.send("doneMsg", "All done.");
+                            arduinoInstallWindow.webContents.send("dataMsg", connandLine);
                           }
+    
+                          server = cp.spawn(this.getArduinoPath(), ["lib", "install", "FastLED", "--config-file", arduinoSettings], {
+                            detached: false,
+                          });
+    
+                          server.stdout.on("data", (data) => {
+                            if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
+                              arduinoInstallWindow.webContents.send("dataMsg", data.toString());
+                            }
+                          });
+    
+                          server.stderr.on("data", (data) => {
+                            console.error(data.toString());
+                            isError = true;
+                            try {
+                              if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
+                                arduinoInstallWindow.webContents.send("errorMsg", data.toString());
+                              }
+                            } catch (e) {
+                              console.log(e);
+                            }
+                          });
+    
+                          server.on("exit", (code) => {
+                            connandLine = "This action is ready: " + this.getArduinoPath() + " lib install FastLED --config-file " + arduinoSettings;
+                            connandLine = connandLine + " , with code: " + code.toString();
+                            try {
+                              if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
+                                arduinoInstallWindow.webContents.send("exitMsg", connandLine);
+                              }
+                            } catch (e) {
+                              console.log(e);
+                            }
+    
+                            if(isError == false && code.toString() == '0'){
+                              if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
+                                arduinoInstallWindow.webContents.send("doneMsg", "All done.");
+                              }
+                            }
+                          });
+                          /***** */
                         }
                       });
-                      /***** */
                     }
-                  });
-                }
+                  })
+                }                
               });
-              //-----
             }
 
   // fs.appendFile('C:\\Projects\\Robium\\robiumconnecter\\log1.txt', JSON.stringify(doc,null,4), function (err) {
@@ -803,13 +845,11 @@ const ArduinoCLIWrapper = {
     let _this = this;
     console.log("connectToCOM called");
     if ((port == null || port == undefined) && _this.comName != "") {
-
       port = new SerialPort({
         path: _this.comName,
         baudRate: _this.baudRate,
         autoOpen: false,
       });
-
       port.open(function (err) {
         //console.log('opening port err : ', err.message)
         if (err) {
@@ -825,7 +865,7 @@ const ArduinoCLIWrapper = {
               _this.win.webContents.send("dataToTerminal", err.message);
             }
           } catch (e) {
-            console.log("My Error 1", e);
+            console.log("My Error ", e);
           }
           return;
         }
@@ -844,6 +884,7 @@ const ArduinoCLIWrapper = {
 
       parser = port.pipe(new ReadlineParser({ delimiter: "\n" }));
       parser.on("data", function (data) {
+        console.log("here 6");
         try {
           if (_this.win != undefined && _this.win != null) {
             _this.win.webContents.send("dataOn", data);
