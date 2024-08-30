@@ -16,10 +16,10 @@ const ArduinoCLIWrapper = {
   isLimitedByReferenceName: false,
   baudRate: 9600,
   isCOMMonitorRunning: false,
-  uploadPortName:'',
+  uploadPortName: "",
   isArduinoUsesPort: false,
-  ports:[],
-  devType:"",
+  ports: [],
+  devType: "",
 
   getBoardsList: function () {
     //Should it be here?
@@ -127,7 +127,7 @@ const ArduinoCLIWrapper = {
 
     // arduino-cli config init --dest-file arduinoSettings
 
-//----------------
+    //----------------
     // let myPromise = new Promise(function (resolve) {
     //   _resolve = resolve;
     // });
@@ -174,37 +174,37 @@ const ArduinoCLIWrapper = {
           console.log(e);
         }
 
-        if(isError == false && code.toString() == '0'){
+        if (isError == false && code.toString() == "0") {
           try {
             const doc = yaml.load(fs.readFileSync(arduinoSettings, "utf8"));
             doc.board_manager.additional_urls.push("http://arduino.esp8266.com/stable/package_esp8266com_index.json");
             doc.board_manager.additional_urls.push("https://dl.espressif.com/dl/package_esp32_index.json");
-            fs.writeFileSync(arduinoSettings, JSON.stringify(doc,null,4), function (err) {
+            fs.writeFileSync(arduinoSettings, JSON.stringify(doc, null, 4), function (err) {
               if (err) {
                 if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                   arduinoInstallWindow.webContents.send("errorMsg", err.toString());
                 }
                 isError = true;
-              } 
+              }
             });
-            
-            if(!isError){
+
+            if (!isError) {
               //-----
               connandLine = "This action is running: " + this.getArduinoPath() + " core update-index --config-file " + arduinoSettings;
               if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                 arduinoInstallWindow.webContents.send("dataMsg", connandLine);
               }
-        
+
               server = cp.spawn(this.getArduinoPath(), ["core", "update-index", "--config-file", arduinoSettings], {
                 detached: false,
               });
-        
+
               server.stdout.on("data", (data) => {
                 if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                   arduinoInstallWindow.webContents.send("dataMsg", data.toString());
                 }
               });
-        
+
               server.stderr.on("data", (data) => {
                 console.error(data.toString());
                 isError = true;
@@ -228,23 +228,23 @@ const ArduinoCLIWrapper = {
                 } catch (e) {
                   console.log(e);
                 }
-        
-                if(isError == false && code.toString() == '0'){
+
+                if (isError == false && code.toString() == "0") {
                   connandLine = "This action is running: " + this.getArduinoPath() + " core install arduino:avr --config-file " + arduinoSettings;
                   if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                     arduinoInstallWindow.webContents.send("dataMsg", connandLine);
                   }
-        
+
                   server = cp.spawn(this.getArduinoPath(), ["core", "install", "arduino:avr", "--config-file", arduinoSettings], {
                     detached: false,
                   });
-        
+
                   server.stdout.on("data", (data) => {
                     if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                       arduinoInstallWindow.webContents.send("dataMsg", data.toString());
                     }
                   });
-        
+
                   server.stderr.on("data", (data) => {
                     console.error(data.toString());
                     isError = true;
@@ -269,22 +269,22 @@ const ArduinoCLIWrapper = {
                       console.log(e);
                     }
 
-                    if(isError == false && code.toString() == '0'){
+                    if (isError == false && code.toString() == "0") {
                       connandLine = "This action is running: " + this.getArduinoPath() + " core install esp8266:esp8266 --config-file " + arduinoSettings;
                       if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                         arduinoInstallWindow.webContents.send("dataMsg", connandLine);
                       }
-            
+
                       server = cp.spawn(this.getArduinoPath(), ["core", "install", "esp8266:esp8266", "--config-file", arduinoSettings], {
                         detached: false,
                       });
-            
+
                       server.stdout.on("data", (data) => {
                         if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                           arduinoInstallWindow.webContents.send("dataMsg", data.toString());
                         }
                       });
-            
+
                       server.stderr.on("data", (data) => {
                         console.error(data.toString());
                         isError = true;
@@ -296,9 +296,9 @@ const ArduinoCLIWrapper = {
                           console.log(e);
                         }
                       });
-    
+
                       server.on("exit", (code) => {
-                      // console.log("Server exited with code " + code.toString());
+                        // console.log("Server exited with code " + code.toString());
                         connandLine = "This action is ready: " + this.getArduinoPath() + " core install esp8266:esp8266 --config-file " + arduinoSettings;
                         connandLine = connandLine + " , with code: " + code.toString();
                         try {
@@ -308,24 +308,23 @@ const ArduinoCLIWrapper = {
                         } catch (e) {
                           console.log(e);
                         }
-            
-                        if(isError == false && code.toString() == '0'){
-                        /***** */
-                          connandLine = "This action is running: " + this.getArduinoPath() + " lib install FastLED --config-file " + arduinoSettings;
+
+                        if (isError == false && code.toString() == "0") {
+                          connandLine = "This action is running: " + this.getArduinoPath() + " core install esp32:esp32 --config-file " + arduinoSettings;
                           if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                             arduinoInstallWindow.webContents.send("dataMsg", connandLine);
                           }
-    
-                          server = cp.spawn(this.getArduinoPath(), ["lib", "install", "FastLED", "--config-file", arduinoSettings], {
+
+                          server = cp.spawn(this.getArduinoPath(), ["core", "install", "esp32:esp32", "--config-file", arduinoSettings], {
                             detached: false,
                           });
-    
+
                           server.stdout.on("data", (data) => {
                             if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                               arduinoInstallWindow.webContents.send("dataMsg", data.toString());
                             }
                           });
-    
+
                           server.stderr.on("data", (data) => {
                             console.error(data.toString());
                             isError = true;
@@ -337,9 +336,9 @@ const ArduinoCLIWrapper = {
                               console.log(e);
                             }
                           });
-    
+
                           server.on("exit", (code) => {
-                            connandLine = "This action is ready: " + this.getArduinoPath() + " lib install FastLED --config-file " + arduinoSettings;
+                            connandLine = "This action is ready: " + this.getArduinoPath() + " core install esp32:esp32 --config-file " + arduinoSettings;
                             connandLine = connandLine + " , with code: " + code.toString();
                             try {
                               if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
@@ -348,38 +347,78 @@ const ArduinoCLIWrapper = {
                             } catch (e) {
                               console.log(e);
                             }
-    
-                            if(isError == false && code.toString() == '0'){
+
+                            if (isError == false && code.toString() == "0") {
+                              /***** */
+                              connandLine = "This action is running: " + this.getArduinoPath() + " lib install FastLED --config-file " + arduinoSettings;
                               if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
-                                arduinoInstallWindow.webContents.send("doneMsg", "All done.");
+                                arduinoInstallWindow.webContents.send("dataMsg", connandLine);
                               }
+
+                              server = cp.spawn(this.getArduinoPath(), ["lib", "install", "FastLED", "--config-file", arduinoSettings], {
+                                detached: false,
+                              });
+
+                              server.stdout.on("data", (data) => {
+                                if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
+                                  arduinoInstallWindow.webContents.send("dataMsg", data.toString());
+                                }
+                              });
+
+                              server.stderr.on("data", (data) => {
+                                console.error(data.toString());
+                                isError = true;
+                                try {
+                                  if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
+                                    arduinoInstallWindow.webContents.send("errorMsg", data.toString());
+                                  }
+                                } catch (e) {
+                                  console.log(e);
+                                }
+                              });
+
+                              server.on("exit", (code) => {
+                                connandLine = "This action is ready: " + this.getArduinoPath() + " lib install FastLED --config-file " + arduinoSettings;
+                                connandLine = connandLine + " , with code: " + code.toString();
+                                try {
+                                  if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
+                                    arduinoInstallWindow.webContents.send("exitMsg", connandLine);
+                                  }
+                                } catch (e) {
+                                  console.log(e);
+                                }
+
+                                if (isError == false && code.toString() == "0") {
+                                  if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
+                                    arduinoInstallWindow.webContents.send("doneMsg", "All done.");
+                                  }
+                                }
+                              });
+                              /***** */
                             }
                           });
-                          /***** */
                         }
                       });
                     }
-                  })
-                }                
+                  });
+                }
               });
             }
 
-  // fs.appendFile('C:\\Projects\\Robium\\robiumconnecter\\log1.txt', JSON.stringify(doc,null,4), function (err) {
-  //   if (err) throw err;
-  //   console.log('Saved!');
-  // });
+            // fs.appendFile('C:\\Projects\\Robium\\robiumconnecter\\log1.txt', JSON.stringify(doc,null,4), function (err) {
+            //   if (err) throw err;
+            //   console.log('Saved!');
+            // });
 
-
-      //     board_manager:
-      // additional_urls:
-      //   - http://arduino.esp8266.com/stable/package_esp8266com_index.json
+            //     board_manager:
+            // additional_urls:
+            //   - http://arduino.esp8266.com/stable/package_esp8266com_index.json
 
             // console.log(doc);
           } catch (e) {
             console.log(e);
           }
         }
-
       });
     } catch (e) {
       error = e.toString();
@@ -388,10 +427,10 @@ const ArduinoCLIWrapper = {
         arduinoInstallWindow.webContents.send("errorMsg", error);
       }
     }
-// return myPromise;
+    // return myPromise;
 
-//----------------
-/*
+    //----------------
+    /*
     try {
       const doc = yaml.load(fs.readFileSync(arduinoSettings, "utf8"));
 
@@ -459,29 +498,35 @@ const ArduinoCLIWrapper = {
       }
 
       let arduinoCLI;
-      
-      if(_this.devType == "ESP8266" || _this.isLimitedByReferenceName){
+
+      if (_this.devType == "ESP8266" || _this.isLimitedByReferenceName) {
         console.log("ESP8266 name +.ino", name + "\\" + name + ".ino");
         arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "esp8266:esp8266:nodemcuv2", name + "\\" + name + ".ino"], {
           detached: false,
           cwd: _this.getProjectsPath(),
         });
-      } else if(_this.devType == "ArduinoUNO"){
+      } else if (_this.devType == "ArduinoUNO") {
         console.log("ArduinoUNO name +.ino", name + "\\" + name + ".ino");
         arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "arduino:avr:uno", name + "\\" + name + ".ino"], {
           detached: false,
           cwd: _this.getProjectsPath(),
         });
-      } else if(_this.devType == "ArduinoNANO"){
-
+      } else if (_this.devType == "ArduinoNANO") {
         // For Arduino Nano with old bootloader, you can use the arduino:avr:nano:cpu=atmega328 fqbn, and for Arduino Nano with new bootloader, you can use the arduino:avr:nano:cpu=atmega328old fqbn.
 
         arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "arduino:avr:nano:cpu=atmega328", name + "\\" + name + ".ino"], {
           detached: false,
           cwd: _this.getProjectsPath(),
         });
+      } else if (_this.devType == "ESP32") {
+        // For Arduino Nano with old bootloader, you can use the arduino:avr:nano:cpu=atmega328 fqbn, and for Arduino Nano with new bootloader, you can use the arduino:avr:nano:cpu=atmega328old fqbn.
+
+        arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "esp32:esp32:esp32", name + "\\" + name + ".ino"], {
+          detached: false,
+          cwd: _this.getProjectsPath(),
+        });
       }
-      
+
       arduinoCLI.stdout.on("data", (data) => {
         console.log("STR OUT ", data.toString());
         try {
@@ -516,29 +561,32 @@ const ArduinoCLIWrapper = {
             }
           } catch (e) {
             console.log(e);
-          } 
+          }
 
           let arduinoCLIUpload;
-      
-          if(_this.devType == "ESP8266" || _this.isLimitedByReferenceName){
+
+          if (_this.devType == "ESP8266" || _this.isLimitedByReferenceName) {
             arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "esp8266:esp8266:nodemcuv2", name + "\\" + name + ".ino"], {
               detached: true,
               cwd: _this.getProjectsPath(),
             });
-  
-          } else if(_this.devType == "ArduinoUNO"){
+          } else if (_this.devType == "ArduinoUNO") {
             arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "arduino:avr:uno", name + "\\" + name + ".ino"], {
               detached: true,
               cwd: _this.getProjectsPath(),
             });
-  
-          } else if(_this.devType == "ArduinoNANO"){
+          } else if (_this.devType == "ArduinoNANO") {
             arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "arduino:avr:nano", name + "\\" + name + ".ino"], {
               detached: true,
               cwd: _this.getProjectsPath(),
             });
+          } else if (_this.devType == "ESP32") {
+            arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "esp32:esp32:esp32", name + "\\" + name + ".ino"], {
+              detached: true,
+              cwd: _this.getProjectsPath(),
+            });
           }
-          
+
           arduinoCLIUpload.stdout.on("data", (data) => {
             console.log("STR OUT ", data.toString());
             try {
@@ -586,9 +634,8 @@ const ArduinoCLIWrapper = {
     });
   },
   upload: function (name, srcCode, notify) {
-
-    if(this.isArduinoUsesPort){
-      notify.sendUploadError('The port is in use');
+    if (this.isArduinoUsesPort) {
+      notify.sendUploadError("The port is in use");
       return;
     }
 
@@ -686,21 +733,20 @@ const ArduinoCLIWrapper = {
     }
   },
   setComName: function (name) {
-
     let envelope = {
       comName: name,
       msg: "",
-      preloader: false
-    }
+      preloader: false,
+    };
 
-    if(!this.isLimitedByReferenceName){
+    if (!this.isLimitedByReferenceName) {
       envelope.ports = this.ports;
     }
 
-    if(name == '' && !this.isArduinoUsesPort){
+    if (name == "" && !this.isArduinoUsesPort) {
       envelope.msg = "Searching for the device ...";
       envelope.preloader = true;
-    } else if (this.isArduinoUsesPort){
+    } else if (this.isArduinoUsesPort) {
       envelope.msg = "Device is connected. The hardware's operations are running...";
       envelope.preloader = true;
     } else {
@@ -709,9 +755,9 @@ const ArduinoCLIWrapper = {
 
     this.comName = name;
     if (this.win != undefined && this.win != null) {
-      try{
+      try {
         this.win.webContents.send("comName", JSON.stringify(envelope));
-      } catch (e){
+      } catch (e) {
         console.log(e);
       }
     }
@@ -719,25 +765,25 @@ const ArduinoCLIWrapper = {
   comNameList: function (name) {
     let _this = this;
     let envelope = {
-      ports:_this.ports,
+      ports: _this.ports,
       comName: name,
       msg: "",
-      preloader: false
-    }
+      preloader: false,
+    };
 
-    if(name == '' && !this.isArduinoUsesPort && _this.ports.length > 0){
+    if (name == "" && !this.isArduinoUsesPort && _this.ports.length > 0) {
       envelope.msg = "Select the device";
       envelope.preloader = false;
     }
 
-    if(_this.ports.length == 0){
+    if (_this.ports.length == 0) {
       envelope.msg = "Connect the device";
       envelope.preloader = true;
     }
     _this.win.webContents.send("comNameList", JSON.stringify(envelope));
     console.log(envelope);
   },
-  setDevType: function (devTypeName){
+  setDevType: function (devTypeName) {
     this.devType = devTypeName;
   },
   startMonitor: async function () {
@@ -757,7 +803,7 @@ const ArduinoCLIWrapper = {
         return;
       }
 
-      if(_this.isArduinoUsesPort){
+      if (_this.isArduinoUsesPort) {
         return;
       }
 
@@ -769,31 +815,31 @@ const ArduinoCLIWrapper = {
           } else {
             // console.log("error", err.message)
           }
-          
-          if(_this.isLimitedByReferenceName){
+
+          if (_this.isLimitedByReferenceName) {
             for (let tmpPort of ports) {
               //console.log("device", tmpPort);
               if (tmpPort.serialNumber == _this.referenceName) {
                 _this.setComName(tmpPort.path);
                 _this.connectToCOM();
               }
-            }  
+            }
           } else {
             let isNewDeviceConnected = true;
             for (let tmpPort of ports) {
               for (let oldPort of _this.ports) {
-                if(tmpPort.path == oldPort.path){
+                if (tmpPort.path == oldPort.path) {
                   isNewDeviceConnected = false;
                   break;
                 }
               }
-              if(isNewDeviceConnected){
+              if (isNewDeviceConnected) {
                 break;
               }
             }
-            if( (isNewDeviceConnected && ports.length > 0) || (_this.ports.length != ports.length) ){
+            if ((isNewDeviceConnected && ports.length > 0) || _this.ports.length != ports.length) {
               _this.ports.length = 0;
-              for(let tmpPort of ports){
+              for (let tmpPort of ports) {
                 _this.ports.push(tmpPort);
               }
               _this.comNameList("");
@@ -801,7 +847,7 @@ const ArduinoCLIWrapper = {
           }
         });
       } else {
-        if(!_this.isLimitedByReferenceName){
+        if (!_this.isLimitedByReferenceName) {
           SerialPort.list().then((ports, err) => {
             if (err) {
               console.log("error", err.message);
@@ -809,22 +855,22 @@ const ArduinoCLIWrapper = {
             } else {
               // console.log("error", err.message)
             }
-          
+
             let isNewDeviceConnected = true;
             for (let tmpPort of ports) {
               for (let oldPort of _this.ports) {
-                if(tmpPort.path == oldPort.path){
+                if (tmpPort.path == oldPort.path) {
                   isNewDeviceConnected = false;
                   break;
                 }
               }
-              if(isNewDeviceConnected){
+              if (isNewDeviceConnected) {
                 break;
               }
             }
-            if( (isNewDeviceConnected && ports.length > 0) || (_this.ports.length != ports.length) ){
+            if ((isNewDeviceConnected && ports.length > 0) || _this.ports.length != ports.length) {
               _this.ports.length = 0;
-              for(let tmpPort of ports){
+              for (let tmpPort of ports) {
                 _this.ports.push(tmpPort);
               }
               _this.comNameList("");
@@ -884,7 +930,7 @@ const ArduinoCLIWrapper = {
 
       parser = port.pipe(new ReadlineParser({ delimiter: "\n" }));
       parser.on("data", function (data) {
-        console.log("here 6");
+        // console.log("here 6");
         try {
           if (_this.win != undefined && _this.win != null) {
             _this.win.webContents.send("dataOn", data);
@@ -901,8 +947,8 @@ const ArduinoCLIWrapper = {
     console.log("disconnectFromCOM called", port, this.comName);
     if (port != null && port != undefined) {
       if (port.isOpen) {
-        port.close(()=>{
-          if(typeof callback !== "undefined"){
+        port.close(() => {
+          if (typeof callback !== "undefined") {
             callback();
           }
         });
@@ -911,13 +957,13 @@ const ArduinoCLIWrapper = {
         port = null;
         parser = null;
         this.setComName("");
-        
-        if(typeof callback !== "undefined"){
+
+        if (typeof callback !== "undefined") {
           callback();
         }
       }
     } else {
-      if(typeof callback !== "undefined"){
+      if (typeof callback !== "undefined") {
         callback();
       }
     }

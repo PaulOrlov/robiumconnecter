@@ -47,20 +47,18 @@ if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-fir
       // console.log(__dirname);
       //C:\Users\paula\AppData\Local\RobiumConnecter\app-1.0.1\resources\app\src
       //C:\Users\paula\AppData\Local\RobiumConnecter\app-1.0.1\RobiumConnecter.exe
-  
-  //     fs.appendFile('C:\\Projects\\Robium\\robiumconnecter\\log1.txt', path.join(__dirname, '..', '..', '..', 'RobiumConnecter.exe'), function (err) {
-  //   if (err) throw err;
-  //   console.log('Saved!');
-  // });
 
-  // cp.spawn(path.join(__dirname, '..', '..', '..', 'RobiumConnecter.exe'), [], {
-  //   detached: true,
-  // });
+      //     fs.appendFile('C:\\Projects\\Robium\\robiumconnecter\\log1.txt', path.join(__dirname, '..', '..', '..', 'RobiumConnecter.exe'), function (err) {
+      //   if (err) throw err;
+      //   console.log('Saved!');
+      // });
+
+      // cp.spawn(path.join(__dirname, '..', '..', '..', 'RobiumConnecter.exe'), [], {
+      //   detached: true,
+      // });
 
       app.quit();
-      
     });
-
   });
 } else {
   // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -70,6 +68,8 @@ if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-fir
 
   let mainWindow = null;
   const createWindow = () => {
+    
+
     let browserWindowIcon = "";
     if (process.argv.includes("debug")) {
       browserWindowIcon = nativeImage.createFromPath(path.join(process.cwd(), "icons/png", "32x32.png"));
@@ -112,8 +112,34 @@ if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-fir
   // app.on('ready', createWindow);
 
   let tray;
+  let wsConnection = null;
+  let wsConnectionScratch = null;
+  let wsToDevice = null;
 
   app.whenReady().then(() => {
+
+    const gotTheLock = app.requestSingleInstanceLock();
+
+    if (!gotTheLock) {
+      //if (win != null) {
+        //mainWindow.webContents.send("quit", "");
+      //}
+      app.quit();
+      return;
+    }
+
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+      // If your app is already running, focus the main window
+      if (mainWindow) {
+        if (mainWindow.isMinimized()) {
+          mainWindow.restore();
+        }
+        mainWindow.focus();
+      } else {
+        createWindow();
+      }
+    });
+
     let icon = "";
     let iconMenuOrange = "";
     console.log(process.argv.includes("debug"));
@@ -168,6 +194,106 @@ if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-fir
     tray.setContextMenu(contextMenu);
     tray.setToolTip("Robium Connecter");
     tray.setTitle("Robium Connecter");
+
+    const wss = new WebSocketServer({ port: 8080 });
+    
+    wss.on("connection", function connection(ws) {
+      wsConnection = ws;
+      ws.on("error", console.error);
+
+      ws.on("message", function message(data) {
+        // console.log("received: %s", data);
+        try {
+          var dataJSON = JSON.parse(data);
+          if (dataJSON.action == "upload") {
+            // if (mainWindow != null) {
+            //   ArduinoCLIWrapper.stopMonitor();
+            //   ArduinoCLIWrapper.disconnectFromCOM();
+            // }
+            if (ArduinoCLIWrapper.isArduinoUsesPort) {
+              sendNotifyToSocket("The hardware's operations are already running. Check the RobiumConnecter");
+              return;
+            } else {
+              sendNotifyToSocket("", NOTIFY_UPLOAD_START);
+              ArduinoCLIWrapper.upload(dataJSON.name, dataJSON.srcCode, notify);
+            }
+          }
+          if (dataJSON.action == "getDeviceProp") {
+            let d = {
+              devCOM: ArduinoCLIWrapper.uploadPortName,
+              devType: ArduinoCLIWrapper.devType,
+            };
+
+            if (d.devCOM == "") {
+              d.devCOM = ArduinoCLIWrapper.comName;
+            }
+
+            sendNotifyToSocket(JSON.stringify(d), NOTIFY_DEVPROP);
+          }
+        } catch (e) {
+          console.log("e ", e);
+        }
+        // ws.send("something***");
+      });
+      // ArduinoCLIWrapper.getBoardsList();
+    });
+
+    const wssScratch = new WebSocketServer({ port: 8081 });
+    
+    wssScratch.on("connection", function connection(ws) {
+      wsConnectionScratch = ws;
+      ws.on("error", console.error);
+      ws.on("message", function message(data) {
+        try {
+          ArduinoCLIWrapper.write(data);
+          if (wsToDevice != null) {
+            wsToDevice.send(data.toString());
+            console.log("send to wsToDevice");
+          }
+          console.log("From Scratch %s", data);
+        } catch (e) {
+          console.log("e ", e);
+        }
+      });
+    });
+
+    const wssToDevice = new WebSocketServer({ port: 8082 });
+    
+    wssToDevice.on("connection", function connection(ws) {
+      wsToDevice = ws;
+      ws.on("error", console.error);
+      ws.on("message", function message(data) {
+        try {
+          console.log("From Device %s", data);
+          if (wsConnection != null) {
+            wsConnection.send(data.toString());
+          }
+          if (wsConnectionScratch != null) {
+            wsConnectionScratch.send(data.toString());
+          }
+        } catch (e) {
+          console.log("e ", e);
+        }
+      });
+    });
+
+    async function run() {
+      let boards = await ArduinoCLIWrapper.getBoardsList();
+      console.log(boards);
+      let boardsStr = "";
+      for (let i = 0; i < boards.length; i++) {
+        boardsStr += JSON.stringify(boards[i]);
+      }
+      try {
+        if (mainWindow != undefined && mainWindow != null) {
+          mainWindow.webContents.send("dataToTerminal", boardsStr);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    }
+
+    run();
   });
 
   // Quit when all windows are closed, except on macOS. There, it's common
@@ -185,123 +311,24 @@ if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-fir
   app.on("activate", () => {
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) {
+    if (BrowserWindow.getAllWindows().length === 0 || mainWindow === null) {
       createWindow();
     }
   });
 
   const notify = {
-    sendNotify: (msg)=>{
+    sendNotify: (msg) => {
       sendNotifyToSocket(JSON.stringify(msg), NOTIFY_GENERAL);
     },
-    sendUploadError: (msg)=>{
+    sendUploadError: (msg) => {
       sendNotifyToSocket(JSON.stringify(msg), NOTIFY_UPLOAD_ERROR);
     },
-    sendUploadDone: (msg)=>{
+    sendUploadDone: (msg) => {
       sendNotifyToSocket(JSON.stringify(msg), NOTIFY_UPLOAD_END);
     },
-  }
+  };
   // In this file you can include the rest of your app's specific main process
   // code. You can also put them in separate files and import them here.
-  const wss = new WebSocketServer({ port: 8080 });
-  let wsConnection = null;
-  wss.on("connection", function connection(ws) {
-    wsConnection = ws;
-    ws.on("error", console.error);
-
-    ws.on("message", function message(data) {
-      // console.log("received: %s", data);
-      try {
-        var dataJSON = JSON.parse(data);
-        if (dataJSON.action == "upload") {
-          // if (mainWindow != null) {
-          //   ArduinoCLIWrapper.stopMonitor();
-          //   ArduinoCLIWrapper.disconnectFromCOM();
-          // }
-          if(ArduinoCLIWrapper.isArduinoUsesPort){
-            sendNotifyToSocket("The hardware's operations are already running. Check the RobiumConnecter");
-            return;
-          } else {
-            sendNotifyToSocket("", NOTIFY_UPLOAD_START);
-            ArduinoCLIWrapper.upload(dataJSON.name, dataJSON.srcCode, notify);
-          }
-        }
-        if(dataJSON.action =="getDeviceProp"){
-          let d = {
-            devCOM: ArduinoCLIWrapper.uploadPortName,
-            devType: ArduinoCLIWrapper.devType
-          }
-
-          if(d.devCOM == ""){
-            d.devCOM = ArduinoCLIWrapper.comName;
-          }
-          
-          sendNotifyToSocket(JSON.stringify(d), NOTIFY_DEVPROP);
-        }
-      } catch (e) {
-        console.log("e ", e);
-      }
-      // ws.send("something***");
-    });
-    // ArduinoCLIWrapper.getBoardsList();
-  });
-
-  const wssScratch = new WebSocketServer({ port: 8081 });
-  let wsConnectionScratch = null;
-  wssScratch.on("connection", function connection(ws) {
-    wsConnectionScratch = ws;
-    ws.on("error", console.error);
-    ws.on("message", function message(data) {
-      try {
-        ArduinoCLIWrapper.write(data);
-        if (wsToDevice != null) {
-          wsToDevice.send(data.toString());
-          console.log("send to wsToDevice");
-        }
-        console.log("From Scratch %s", data);
-      } catch (e) {
-        console.log("e ", e);
-      }
-    });
-  });
-
-  const wssToDevice = new WebSocketServer({ port: 8082 });
-  let wsToDevice = null;
-  wssToDevice.on("connection", function connection(ws) {
-    wsToDevice = ws;
-    ws.on("error", console.error);
-    ws.on("message", function message(data) {
-      try {
-        console.log("From Device %s", data);
-        if (wsConnection != null) {
-          wsConnection.send(data.toString());
-        }
-        if (wsConnectionScratch != null) {
-          wsConnectionScratch.send(data.toString());
-        }
-      } catch (e) {
-        console.log("e ", e);
-      }
-    });
-  });
-
-  async function run() {
-    let boards = await ArduinoCLIWrapper.getBoardsList();
-    console.log(boards);
-    let boardsStr = "";
-    for (let i = 0; i < boards.length; i++) {
-      boardsStr += JSON.stringify(boards[i]);
-    }
-    try {
-      if (mainWindow != undefined && mainWindow != null) {
-        mainWindow.webContents.send("dataToTerminal", boardsStr);
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
-  run();
 
   ipcMain.on("quit", (event, args) => {
     ArduinoCLIWrapper.stopMonitor();
@@ -321,14 +348,14 @@ if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-fir
 
   ipcMain.on("sendStringToSocket", (event, args) => {
     // console.log("sendStringToSocket ", args);
-    if (wsConnection != null) {
+    if(typeof wsConnection !== "undefined" && wsConnection != null){ 
       // let package = {
       //   type: "string",
       //   value: args,
       // };
       //wsConnection.send(args);
     }
-    if (wsConnectionScratch != null) {
+    if(typeof wsConnectionScratch !== "undefined" && wsConnectionScratch != null){ 
       let package = {
         type: "string",
         name: "serial",
@@ -339,19 +366,19 @@ if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-fir
     }
   });
 
-  function sendNotifyToSocket(args){
+  function sendNotifyToSocket(args) {
     let package = {
       type: "notify",
       name: "RobiumConnectionStatus",
       value: args,
     };
-    if (wsConnection != null) {
+    if(typeof wsConnection !== "undefined" && wsConnection != null){ 
       wsConnection.send(JSON.stringify(package));
     }
-    if (wsConnectionScratch != null) {
+    if(typeof wsConnectionScratch !== "undefined" && wsConnectionScratch != null){ 
       wsConnectionScratch.send(JSON.stringify(package));
     }
-  };
+  }
 
   const NOTIFY_DEVPROP = "deviceProps";
   const NOTIFY_UPLOAD_START = "uploadStart";
@@ -359,20 +386,20 @@ if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-fir
   const NOTIFY_UPLOAD_END = "uploadEnd";
   const NOTIFY_GENERAL = "general";
 
-  function sendNotifyToSocket(args, type){
+  function sendNotifyToSocket(args, type) {
     let package = {
       type: "notify",
       name: type,
       value: args,
     };
-    if (wsConnection != null) {
+    if(typeof wsConnection !== "undefined" && wsConnection != null){ 
       wsConnection.send(JSON.stringify(package));
     }
-    if (wsConnectionScratch != null) {
+    if(typeof wsConnectionScratch !== "undefined" && wsConnectionScratch != null){ 
       wsConnectionScratch.send(JSON.stringify(package));
     }
-  };
-  
+  }
+
   ipcMain.on("sendNotifyToSocket", (event, args) => {
     // console.log("sendStringToSocket ", args);
     sendNotifyToSocket(args);
@@ -382,15 +409,14 @@ if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-fir
     ArduinoCLIWrapper.write(args);
   });
 
-  ipcMain.on("setDeviceByUser", (e,a) => {
-    ArduinoCLIWrapper.disconnectFromCOM(()=>{
+  ipcMain.on("setDeviceByUser", (e, a) => {
+    ArduinoCLIWrapper.disconnectFromCOM(() => {
       ArduinoCLIWrapper.setComName(a);
       ArduinoCLIWrapper.connectToCOM();
     });
-    
   });
 
-  ipcMain.on("setDeviceTypeByUser", (e,a) => {
+  ipcMain.on("setDeviceTypeByUser", (e, a) => {
     ArduinoCLIWrapper.setDevType(a);
     // ArduinoCLIWrapper.connectToCOM();
     console.log("setDeviceTypeByUser", a);
