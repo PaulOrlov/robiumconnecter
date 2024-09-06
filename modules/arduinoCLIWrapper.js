@@ -518,6 +518,13 @@ const ArduinoCLIWrapper = {
           detached: false,
           cwd: _this.getProjectsPath(),
         });
+      } else if (_this.devType == "ArduinoNANOOld") {
+        // For Arduino Nano with old bootloader, you can use the arduino:avr:nano:cpu=atmega328 fqbn, and for Arduino Nano with new bootloader, you can use the arduino:avr:nano:cpu=atmega328old fqbn.
+
+        arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "arduino:avr:nano:cpu=atmega328old", name + "\\" + name + ".ino"], {
+          detached: false,
+          cwd: _this.getProjectsPath(),
+        });
       } else if (_this.devType == "ESP32") {
         // For Arduino Nano with old bootloader, you can use the arduino:avr:nano:cpu=atmega328 fqbn, and for Arduino Nano with new bootloader, you can use the arduino:avr:nano:cpu=atmega328old fqbn.
 
@@ -577,6 +584,11 @@ const ArduinoCLIWrapper = {
             });
           } else if (_this.devType == "ArduinoNANO") {
             arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "arduino:avr:nano", name + "\\" + name + ".ino"], {
+              detached: true,
+              cwd: _this.getProjectsPath(),
+            });
+          } else if (_this.devType == "ArduinoNANOOld") {
+              arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "arduino:avr:nano:cpu=atmega328old", name + "\\" + name + ".ino"], {
               detached: true,
               cwd: _this.getProjectsPath(),
             });
