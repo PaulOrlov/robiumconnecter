@@ -128,3 +128,15 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# macOS arduino-cli binary (download separately per platform)
+projects/arduino-cli
+
+# arduino-cli generated files
+projects/arduino-cli.json
+projects/.robium-init-complete
+
+# pnpm
+pnpm-lock.yaml
+pnpm-workspace.yaml
+.npmrc

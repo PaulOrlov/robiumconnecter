@@ -5,7 +5,10 @@ const { ArduinoCLIWrapper } = require("../modules/arduinoCLIWrapper.js");
 const cp = require("child_process");
 var fs = require("fs");
 
-if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-firstrun") {
+const isFirstRun = (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-firstrun") ||
+  (process.platform !== "win32" && !fs.existsSync(path.join(__dirname, "..", "projects", ".robium-init-complete")));
+
+if (isFirstRun) {
   // fs.appendFile('C:\\Projects\\Robium\\robiumconnecter\\log1.txt', process.argv[1], function (err) {
   //   if (err) throw err;
   //   console.log('Saved!');
@@ -44,19 +47,7 @@ if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-fir
     });
 
     ipcMain.on("relaunch", (event, args) => {
-      // console.log(__dirname);
-      //C:\Users\paula\AppData\Local\RobiumConnecter\app-1.0.1\resources\app\src
-      //C:\Users\paula\AppData\Local\RobiumConnecter\app-1.0.1\RobiumConnecter.exe
-
-      //     fs.appendFile('C:\\Projects\\Robium\\robiumconnecter\\log1.txt', path.join(__dirname, '..', '..', '..', 'RobiumConnecter.exe'), function (err) {
-      //   if (err) throw err;
-      //   console.log('Saved!');
-      // });
-
-      // cp.spawn(path.join(__dirname, '..', '..', '..', 'RobiumConnecter.exe'), [], {
-      //   detached: true,
-      // });
-
+      app.relaunch({ args: process.argv.slice(1).filter(a => a !== "--squirrel-firstrun") });
       app.quit();
     });
   });
@@ -144,14 +135,19 @@ if (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-fir
     let iconMenuOrange = "";
     console.log(process.argv.includes("debug"));
 
+    const iconDir = process.platform === "win32" ? "icons/win" : "icons/png";
+    const iconFile = process.platform === "win32" ? "icon.ico" : "32x32.png";
     if (process.argv.includes("debug")) {
-      icon = nativeImage.createFromPath(path.join(process.cwd(), "icons/win", "icon.ico"));
+      icon = nativeImage.createFromPath(path.join(process.cwd(), iconDir, iconFile));
       iconMenuOrange = nativeImage.createFromPath(path.join(process.cwd(), "icons/png", "24x24.png"));
     } else {
-      icon = nativeImage.createFromPath(path.join(process.cwd(), "resources/app/icons/win", "icon.ico"));
+      icon = nativeImage.createFromPath(path.join(process.cwd(), "resources/app/" + iconDir, iconFile));
       iconMenuOrange = nativeImage.createFromPath(path.join(process.cwd(), "resources/app/icons/png", "24x24.png"));
     }
 
+    if (process.platform === "darwin") {
+      icon.setTemplateImage(true);
+    }
     tray = new Tray(icon);
     if (process.platform === "win32") {
       tray.on("click", () => {

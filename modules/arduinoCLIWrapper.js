@@ -92,32 +92,11 @@ const ArduinoCLIWrapper = {
     return myPromise;
   },
   getArduinoPath: function () {
-    let arduinoPath = path.join(path.dirname(__dirname), "projects", "arduino-cli.exe");
-    if (process.argv.includes("debug")) {
-      arduinoPath = path.join(path.dirname(__dirname), "projects", "arduino-cli.exe");
-    }
-
-    // console.log("arduinoPath", arduinoPath);
-    // fs.appendFile('C:\\Projects\\Robium\\robiumconnecter\\log1.txt', "\n arduinoPath: " + arduinoPath, function (err) {
-    //   if (err) throw err;
-    //   console.log('Saved!');
-    // });
-
-    return arduinoPath;
+    const binaryName = process.platform === "win32" ? "arduino-cli.exe" : "arduino-cli";
+    return path.join(path.dirname(__dirname), "projects", binaryName);
   },
   getProjectsPath: function () {
-    let projectsPath = path.join(path.dirname(__dirname), "projects");
-    if (process.argv.includes("debug")) {
-      projectsPath = path.join(path.dirname(__dirname), "projects");
-    }
-
-    // console.log("projectsPath", projectsPath);
-    // fs.appendFile('C:\\Projects\\Robium\\robiumconnecter\\log1.txt', "\n projectsPath: " + projectsPath, function (err) {
-    //   if (err) throw err;
-    //   console.log('Saved!');
-    // });
-
-    return projectsPath;
+    return path.join(path.dirname(__dirname), "projects");
   },
   initArduino: function (arduinoInstallWindow) {
     let isError = false;
@@ -140,7 +119,7 @@ const ArduinoCLIWrapper = {
       }
 
       //server = cp.spawn("C:\\Projects\\Robium\\arduino-cli_0.32.2_Windows_64bit\\arduino-cli.exe", ["board", "list"], {
-      server = cp.spawn(this.getArduinoPath(), ["config", "init", "--dest-file", arduinoSettings], {
+      server = cp.spawn(this.getArduinoPath(), ["config", "init", "--overwrite", "--dest-file", arduinoSettings], {
         detached: false,
       });
 
@@ -179,14 +158,7 @@ const ArduinoCLIWrapper = {
             const doc = yaml.load(fs.readFileSync(arduinoSettings, "utf8"));
             doc.board_manager.additional_urls.push("http://arduino.esp8266.com/stable/package_esp8266com_index.json");
             doc.board_manager.additional_urls.push("https://dl.espressif.com/dl/package_esp32_index.json");
-            fs.writeFileSync(arduinoSettings, JSON.stringify(doc, null, 4), function (err) {
-              if (err) {
-                if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
-                  arduinoInstallWindow.webContents.send("errorMsg", err.toString());
-                }
-                isError = true;
-              }
-            });
+            fs.writeFileSync(arduinoSettings, yaml.dump(doc));
 
             if (!isError) {
               //-----
@@ -389,6 +361,11 @@ const ArduinoCLIWrapper = {
                                 }
 
                                 if (isError == false && code.toString() == "0") {
+                                  try {
+                                    fs.writeFileSync(path.join(path.dirname(__dirname), "projects", ".robium-init-complete"), "");
+                                  } catch (e) {
+                                    console.log("Failed to write init sentinel:", e);
+                                  }
                                   if (arduinoInstallWindow != undefined && arduinoInstallWindow != null) {
                                     arduinoInstallWindow.webContents.send("doneMsg", "All done.");
                                   }
@@ -457,7 +434,7 @@ const ArduinoCLIWrapper = {
     console.log("MakeSrcFile called");
     this.isArduinoUsesPort = true;
     _this.win.webContents.send("isArduinoUsesPort", _this.isArduinoUsesPort);
-    //sPath = fp.dirname(__dirname) + "\\projects\\" + name + "\\" + name + ".ino";
+    //sPath = fp.dirname(__dirname) + "\\projects\\" + path.join(name, name + ".ino");
     let sPath = path.join(this.getProjectsPath(), name, name + ".ino");
     try {
       if (_this.win != undefined && _this.win != null) {
@@ -475,7 +452,7 @@ const ArduinoCLIWrapper = {
       // file written successfully
       //console.log("file written successfully ", sPath);
       //console.log("cwd ", fp.dirname(__dirname) + "\\projects");
-      //console.log("path ", name + "\\" + name + ".ino");
+      //console.log("path ", path.join(name, name + ".ino"));
       try {
         if (_this.win != undefined && _this.win != null) {
           _this.win.webContents.send("dataToTerminal", "file written successfully");
@@ -500,35 +477,35 @@ const ArduinoCLIWrapper = {
       let arduinoCLI;
 
       if (_this.devType == "ESP8266" || _this.isLimitedByReferenceName) {
-        console.log("ESP8266 name +.ino", name + "\\" + name + ".ino");
-        arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "esp8266:esp8266:nodemcuv2", name + "\\" + name + ".ino"], {
+        console.log("ESP8266 name +.ino", path.join(name, name + ".ino"));
+        arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "esp8266:esp8266:nodemcuv2", path.join(name, name + ".ino")], {
           detached: false,
           cwd: _this.getProjectsPath(),
         });
       } else if (_this.devType == "ArduinoUNO") {
-        console.log("ArduinoUNO name +.ino", name + "\\" + name + ".ino");
-        arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "arduino:avr:uno", name + "\\" + name + ".ino"], {
+        console.log("ArduinoUNO name +.ino", path.join(name, name + ".ino"));
+        arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "arduino:avr:uno", path.join(name, name + ".ino")], {
           detached: false,
           cwd: _this.getProjectsPath(),
         });
       } else if (_this.devType == "ArduinoNANO") {
         // For Arduino Nano with old bootloader, you can use the arduino:avr:nano:cpu=atmega328 fqbn, and for Arduino Nano with new bootloader, you can use the arduino:avr:nano:cpu=atmega328old fqbn.
 
-        arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "arduino:avr:nano:cpu=atmega328", name + "\\" + name + ".ino"], {
+        arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "arduino:avr:nano:cpu=atmega328", path.join(name, name + ".ino")], {
           detached: false,
           cwd: _this.getProjectsPath(),
         });
       } else if (_this.devType == "ArduinoNANOOld") {
         // For Arduino Nano with old bootloader, you can use the arduino:avr:nano:cpu=atmega328 fqbn, and for Arduino Nano with new bootloader, you can use the arduino:avr:nano:cpu=atmega328old fqbn.
 
-        arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "arduino:avr:nano:cpu=atmega328old", name + "\\" + name + ".ino"], {
+        arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "arduino:avr:nano:cpu=atmega328old", path.join(name, name + ".ino")], {
           detached: false,
           cwd: _this.getProjectsPath(),
         });
       } else if (_this.devType == "ESP32") {
         // For Arduino Nano with old bootloader, you can use the arduino:avr:nano:cpu=atmega328 fqbn, and for Arduino Nano with new bootloader, you can use the arduino:avr:nano:cpu=atmega328old fqbn.
 
-        arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "esp32:esp32:esp32", name + "\\" + name + ".ino"], {
+        arduinoCLI = cp.spawn(this.getArduinoPath(), ["compile", "--fqbn", "esp32:esp32:esp32", path.join(name, name + ".ino")], {
           detached: false,
           cwd: _this.getProjectsPath(),
         });
@@ -573,27 +550,27 @@ const ArduinoCLIWrapper = {
           let arduinoCLIUpload;
 
           if (_this.devType == "ESP8266" || _this.isLimitedByReferenceName) {
-            arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "esp8266:esp8266:nodemcuv2", name + "\\" + name + ".ino"], {
+            arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "esp8266:esp8266:nodemcuv2", path.join(name, name + ".ino")], {
               detached: true,
               cwd: _this.getProjectsPath(),
             });
           } else if (_this.devType == "ArduinoUNO") {
-            arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "arduino:avr:uno", name + "\\" + name + ".ino"], {
+            arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "arduino:avr:uno", path.join(name, name + ".ino")], {
               detached: true,
               cwd: _this.getProjectsPath(),
             });
           } else if (_this.devType == "ArduinoNANO") {
-            arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "arduino:avr:nano", name + "\\" + name + ".ino"], {
+            arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "arduino:avr:nano", path.join(name, name + ".ino")], {
               detached: true,
               cwd: _this.getProjectsPath(),
             });
           } else if (_this.devType == "ArduinoNANOOld") {
-              arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "arduino:avr:nano:cpu=atmega328old", name + "\\" + name + ".ino"], {
+              arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "arduino:avr:nano:cpu=atmega328old", path.join(name, name + ".ino")], {
               detached: true,
               cwd: _this.getProjectsPath(),
             });
           } else if (_this.devType == "ESP32") {
-            arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "esp32:esp32:esp32", name + "\\" + name + ".ino"], {
+            arduinoCLIUpload = cp.spawn(this.getArduinoPath(), ["upload", "-p", _this.uploadPortName, "--fqbn", "esp32:esp32:esp32", path.join(name, name + ".ino")], {
               detached: true,
               cwd: _this.getProjectsPath(),
             });
