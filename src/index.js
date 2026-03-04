@@ -5,6 +5,12 @@ const { ArduinoCLIWrapper } = require("../modules/arduinoCLIWrapper.js");
 const cp = require("child_process");
 var fs = require("fs");
 
+// Handle Squirrel lifecycle events on Windows (install/update/uninstall shortcuts).
+// Must run before the first-run check so these events quit immediately.
+if (require("electron-squirrel-startup")) {
+  app.quit();
+}
+
 const isFirstRun = !fs.existsSync(path.join(__dirname, "..", "projects", ".robium-init-complete"));
 
 if (isFirstRun) {
@@ -51,11 +57,6 @@ if (isFirstRun) {
     });
   });
 } else {
-  // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-  if (require("electron-squirrel-startup")) {
-    app.quit();
-  }
-
   let mainWindow = null;
   const createWindow = () => {
     
