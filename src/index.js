@@ -5,8 +5,7 @@ const { ArduinoCLIWrapper } = require("../modules/arduinoCLIWrapper.js");
 const cp = require("child_process");
 var fs = require("fs");
 
-const isFirstRun = (typeof process.argv[1] !== "undefined" && process.argv[1] == "--squirrel-firstrun") ||
-  (process.platform !== "win32" && !fs.existsSync(path.join(__dirname, "..", "projects", ".robium-init-complete")));
+const isFirstRun = !fs.existsSync(path.join(__dirname, "..", "projects", ".robium-init-complete"));
 
 if (isFirstRun) {
   // fs.appendFile('C:\\Projects\\Robium\\robiumconnecter\\log1.txt', process.argv[1], function (err) {
@@ -47,7 +46,7 @@ if (isFirstRun) {
     });
 
     ipcMain.on("relaunch", (event, args) => {
-      app.relaunch({ args: process.argv.slice(1).filter(a => a !== "--squirrel-firstrun") });
+      app.relaunch();
       app.quit();
     });
   });
